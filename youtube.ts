@@ -1,3 +1,4 @@
+import * as v from "@valibot/valibot";
 import { google } from "googleapis";
 import { kv } from "./kv.ts";
 
@@ -8,61 +9,90 @@ if (!apiKey) {
 
 const youtube = google.youtube({
     version: "v3",
-    auth: apiKey
+    auth: apiKey,
 });
 
-async function searchForLivestream(channelId: string): Promise<string | null> {
-    console.log("searching");
+const YoutubeStreamSchema = v.object({
+    videoId: v.string(),
+    startTime: v.date(),
+});
+type YoutubeStream = v.InferOutput<typeof YoutubeStreamSchema>;
 
-    const result = await youtube.search.list({
+async function searchForLivestream(
+    channelId: string,
+): Promise<YoutubeStream | null> {
+    const searchResult = await youtube.search.list({
         part: ["snippet"],
         channelId,
         eventType: "live",
         type: ["video"],
     });
-    // TODO: check for undefineds here
-    const item = result.data.items?.[0];
+
+    const item = searchResult.data.items?.[0];
     if (item) {
-        // found the livestream, put its ID in KV
-        const videoId = item.id?.videoId
+        // found the livestream! get its start time
+        const videoId = item.id?.videoId;
         if (!videoId) {
             throw new Error("Couldn't get video ID");
         }
 
-        kv.set(["channelCurrentLivestream", channelId], videoId, { expireIn: 6 * 60 * 60 * 1000 });
-        return videoId;
+        const listResult = await youtube.videos.list({
+            part: ["liveStreamingDetails"],
+            id: [videoId],
+        });
+
+        const startTimeString = listResult.data.items?.[0]?.liveStreamingDetails
+            ?.actualStartTime;
+        if (!startTimeString) {
+            // stream not started yet (or other error)
+            return null;
+        }
+
+        const stream: YoutubeStream = {
+            videoId,
+            startTime: new Date(startTimeString),
+        };
+
+        kv.set(["channelCurrentLivestream", channelId], stream, {
+            expireIn: 6 * 60 * 60 * 1000,
+        });
+
+        console.log("put", stream, "in cache");
+
+        return stream;
     } else {
         // no livestream
         return null;
     }
 }
 
-async function verifyLivestream(videoId: string): Promise<boolean> {
-    console.log("verifying");
-
+async function verifyLivestream(stream: YoutubeStream): Promise<boolean> {
     const result = await youtube.videos.list({
         part: ["snippet"],
-        id: [videoId],
+        id: [stream.videoId],
     });
-    // TODO: check for undefineds here
+
     return result.data.items?.[0]?.snippet?.liveBroadcastContent == "live";
 }
 
-export async function getChannelLivestream(channelId: string): Promise<string | null> {
+export async function getChannelLivestream(
+    channelId: string,
+): Promise<YoutubeStream | null> {
     const cachedEntry = await kv.get(["channelCurrentLivestream", channelId]);
     if (cachedEntry.versionstamp != null) {
         // we have a potential candidate!
-        const videoId = cachedEntry.value;
-        if (typeof videoId != "string") {
+        const streamData = v.safeParse(YoutubeStreamSchema, cachedEntry.value);
+        if (!streamData.success) {
             throw new Error("Unexpected value in database");
         }
 
-        if (await verifyLivestream(videoId)) {
-            return videoId;
+        if (await verifyLivestream(streamData.output)) {
+            return streamData.output;
+        } else {
+            // delete the key so that the API query isn't repeated unnecessarily
+            await kv.delete(["channelCurrentLivestream", channelId]);
+            // there may be a new live stream, fall through
         }
-        // delete the key so that the API query isn't repeated unnecessarily
-        await kv.delete(["channelCurrentLivestream", channelId]);
-        // there may be a new live stream, fall through
     }
     // search for it :(
     // this automatically puts it in KV
