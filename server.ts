@@ -1,19 +1,22 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { createBookmark } from "./bookmark.ts";
 
 export function createApp() {
     const app = new Hono()
         .get("/create-bookmark", async (ctx) => {
-            // channel ID regex: UC([-_a-zA-Z0-9]{22})
-            // video ID regex: [-_a-zA-Z0-9]{11}
-            // TODO: get stuff from Nightbot headers
+            // TODO: Set the no-cache header.
+            // This might be easier in a middleware.
             const responseUrl = ctx.req.header("Nightbot-Response-Url");
             const userString = ctx.req.header("Nightbot-User");
             const channelString = ctx.req.header("Nightbot-Channel");
             if (!responseUrl || !userString || !channelString) {
                 return ctx.text("Error: You must be Nightbot", 400);
             }
+
             try {
+                await createBookmark(channelString, userString);
+                return ctx.text("Bookmark created!");
             } catch (e) {
                 if (e instanceof HTTPException) {
                     throw e;
