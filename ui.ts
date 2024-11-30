@@ -58,7 +58,9 @@ export const BookmarkList = (
             <h1>Bookmarks for &ldquo;${title}&rdquo;</h1>
             <ol>${entries}</ol>
             <hr>
-            <a href="/">What is this?</a>
+            <p>
+                <a href="/">What is this?</a>
+            </p>
         `],
     });
 };
