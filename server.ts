@@ -28,15 +28,18 @@ export function createApp() {
             const responseUrl = ctx.req.header("Nightbot-Response-Url");
             const userString = ctx.req.header("Nightbot-User");
             const channelString = ctx.req.header("Nightbot-Channel");
+
+            console.debug("Received bookmark request!");
+            console.debug(`Nightbot-User: ${userString}`);
+            console.debug(`Nightbot-Channel: ${channelString}`);
+
             if (!responseUrl || !userString || !channelString) {
                 throw new HTTPException(400, {
                     message: "You must be Nightbot",
                 });
             }
 
-            await createBookmark(channelString, userString);
-            // TODO: improve messages
-            return ctx.text("Bookmark created!");
+            return ctx.text(await createBookmark(channelString, userString));
         })
         .get(
             "/:videoId",
