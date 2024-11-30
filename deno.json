@@ -1,10 +1,18 @@
 {
-  "tasks": {
-    "dev": "deno run --watch main.ts"
-  },
-  "imports": {
-    "@valibot/valibot": "jsr:@valibot/valibot@^0.42.1",
-    "googleapis": "npm:googleapis@^144.0.0",
-    "hono": "jsr:@hono/hono@^4.6.12"
-  }
+    "tasks": {
+        "dev": "deno run --watch main.ts"
+    },
+    "imports": {
+        "@valibot/valibot": "jsr:@valibot/valibot@^0.42.1",
+        "googleapis": "npm:googleapis@^144.0.0",
+        "hono": "jsr:@hono/hono@^4.6.12"
+    },
+    "deploy": {
+        "project": "2e5bf2c1-3901-4808-a4e9-dd22e97a371d",
+        "exclude": [
+        "**/node_modules"
+        ],
+        "include": [],
+        "entrypoint": "main.ts"
+    }
 }
