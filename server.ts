@@ -69,7 +69,11 @@ export function createApp() {
 
                 const bookmarks = (await Array.fromAsync(
                     kv.list({ prefix: ["bookmarks", videoId] }),
-                )).map((entry) => v.parse(BookmarkSchema, entry.value));
+                ))
+                    .map((entry) => v.parse(BookmarkSchema, entry.value))
+                    .toSorted((a, b) =>
+                        a.secondsSinceStart - b.secondsSinceStart
+                    );
 
                 return ctx.html(
                     BookmarkList({ videoId, title: title.value, bookmarks }),
