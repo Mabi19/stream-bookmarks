@@ -1,12 +1,25 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { createBookmark } from "./bookmark.ts";
+import { BookmarkList, Homepage } from "./ui.ts";
 
 export function createApp() {
     const app = new Hono()
+        .onError((error, ctx) => {
+            if (error instanceof HTTPException) {
+                throw error;
+            } else if (error instanceof Error) {
+                return ctx.text(`Error: ${error.message}`, 500);
+            } else {
+                return ctx.text(
+                    "An unknown error has occured! :(",
+                    500,
+                );
+            }
+        })
         .get("/create-bookmark", async (ctx) => {
-            // TODO: Set the no-cache header.
-            // This might be easier in a middleware.
+            ctx.res.headers.set("Cache-Control", "no-store");
+
             const responseUrl = ctx.req.header("Nightbot-Response-Url");
             const userString = ctx.req.header("Nightbot-User");
             const channelString = ctx.req.header("Nightbot-Channel");
@@ -14,26 +27,14 @@ export function createApp() {
                 return ctx.text("Error: You must be Nightbot", 400);
             }
 
-            try {
-                await createBookmark(channelString, userString);
-                return ctx.text("Bookmark created!");
-            } catch (e) {
-                if (e instanceof HTTPException) {
-                    throw e;
-                } else if (e instanceof Error) {
-                    return ctx.text(`Error: ${e.message}`, 500);
-                } else {
-                    return ctx.text(
-                        "An unknown error has occured! :(",
-                        500,
-                    );
-                }
-            }
+            await createBookmark(channelString, userString);
+            return ctx.text("Bookmark created!");
         })
         .get(
             "/:videoId",
-            (ctx) => ctx.text(`Bookmark list for ${ctx.req.param("videoId")}`),
-        );
+            (ctx) => ctx.html(BookmarkList(ctx.req.param("videoId"))),
+        )
+        .get("/", (ctx) => ctx.html(Homepage()));
 
     return app;
 }
