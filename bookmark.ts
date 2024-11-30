@@ -1,5 +1,6 @@
 import * as v from "@valibot/valibot";
 import { HTTPException } from "hono/http-exception";
+import config from "./config.json" with { type: "json" };
 import { kv } from "./kv.ts";
 import { getChannelLivestream } from "./youtube.ts";
 
@@ -30,7 +31,7 @@ export async function createBookmark(
 
     const provider = channelData.get("provider");
     if (provider != "youtube") {
-        throw new HTTPException(400, { message: "Only YouTube is supported" });
+        throw new HTTPException(418, { message: "Only YouTube is supported" });
     }
 
     const username = userData.get("displayName");
@@ -38,6 +39,12 @@ export async function createBookmark(
 
     if (!username || !channelId || !CHANNEL_ID_REGEX.test(channelId)) {
         throw new HTTPException(400, { message: "Invalid request data" });
+    }
+
+    if (!config.allowedChannels.includes(channelId)) {
+        throw new HTTPException(403, {
+            message: "This channel isn't whitelisted",
+        });
     }
 
     const stream = await getChannelLivestream(channelId);
@@ -55,7 +62,7 @@ export async function createBookmark(
     const key = ["bookmarks", stream.videoId, username];
     await kv.set(key, bookmark);
 
-    // TODO: put a link here
+    // TODO: put a link here, with highlight
     return `${username} creates a bookmark ${
         formatTime(bookmark.secondsSinceStart)
     } into the stream: [LINK]`;
