@@ -69,11 +69,11 @@ export const Homepage = () => {
         children: [html`
             <h1>Stream Bookmarks</h1>
             <p>
-                This is a tiny utility to bookmark where you left a YouTube stream, by making a Nightbot Custom API.
+                This is a tiny (&lt; 400 lines of code) utility to bookmark where you left a YouTube stream, by making a Nightbot Custom API.
                 It's currently restricted to <a href="https://youtube.com/@ArgonMatrix">ArgonMatrix</a>'s channel only.
             </p>
             <p>
-                This app's source code is <!-- TODO --> available on GitHub,
+                This app's source code is <a href="https://github.com/Mabi19/stream-bookmarks">available on GitHub</a>,
                 and you can find more of my stuff at <a href="https://mabi.land/">mabi.land</a>. 
             </p>
             <h2>Usage</h2>
