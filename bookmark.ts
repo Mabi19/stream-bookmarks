@@ -12,10 +12,19 @@ export const BookmarkSchema = v.object({
 
 export type Bookmark = v.InferOutput<typeof BookmarkSchema>;
 
+export function formatTime(duration: number) {
+    const seconds = duration % 60;
+    const minutes = (duration - seconds) / 60;
+    const hours = (duration - seconds - minutes * 60) / 3600;
+    return `${hours}:${minutes.toString().padStart(2, "0")}:${
+        seconds.toString().padStart(2, "0")
+    }`;
+}
+
 export async function createBookmark(
     channelString: string,
     userString: string,
-) {
+): Promise<string> {
     const channelData = new URLSearchParams(channelString);
     const userData = new URLSearchParams(userString);
 
@@ -45,4 +54,9 @@ export async function createBookmark(
 
     const key = ["bookmarks", stream.videoId, username];
     await kv.set(key, bookmark);
+
+    // TODO: put a link here
+    return `${username} creates a bookmark ${
+        formatTime(bookmark.secondsSinceStart)
+    } into the stream: [LINK]`;
 }

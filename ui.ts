@@ -1,8 +1,6 @@
-import * as v from "@valibot/valibot";
 import { html } from "hono/html";
 import { PropsWithChildren } from "hono/jsx";
-import { type Bookmark, BookmarkSchema } from "./bookmark.ts";
-import { kv } from "./kv.ts";
+import { type Bookmark, formatTime } from "./bookmark.ts";
 
 export const Layout = (
     { title, children }: PropsWithChildren<{ title: string }>,
@@ -13,9 +11,15 @@ export const Layout = (
             <meta charset="utf-8">
             <title>${title}</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta name="color-scheme" content="light dark" />
+            <link
+                rel="stylesheet"
+                href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.violet.min.css"
+            >
+            <link href="https://mabi.land/assets/icon.png" rel="icon">
         </head>
         <body>
-            <main>
+            <main class="container">
                 ${children}
             </main>
         </body>
@@ -31,45 +35,30 @@ function makeBookmarkEntry(
 
     const link =
         `https://youtube.com/watch?v=${videoId}&t=${secondsSinceStart}`;
-    const seconds = secondsSinceStart % 60;
-    const minutes = (secondsSinceStart - seconds) / 60;
-    const hours = (secondsSinceStart - seconds - minutes * 60) / 3600;
-    const formattedTime = `${hours}:${minutes.toString().padStart(2, "0")}:${
-        seconds.toString().padStart(2, "0")
-    }`;
 
     return html`<li>
-        <a href="${link}">${username}: ${formattedTime}</a>
+        <a href="${link}">${username}: ${formatTime(secondsSinceStart)}</a>
     </li>`;
 }
 
-export const BookmarkList = async (videoId: string) => {
-    const title = await kv.get(["streamTitle", videoId]);
-    if (title.versionstamp == null || typeof title.value != "string") {
-        return Layout({
-            title: `Stream not found`,
-            children: [html`
-                <h1>Bookmarks for &ldquo;???&rdquo;</h1>
-                <p>
-                    There aren't any bookmarks here :(
-                </p>
-            `],
-        });
-    }
-
-    const bookmarks = (await Array.fromAsync(
-        kv.list({ prefix: ["bookmarks", videoId] }),
-    )).map((entry) => v.parse(BookmarkSchema, entry.value));
-
+export const BookmarkList = (
+    { videoId, title, bookmarks }: {
+        videoId: string;
+        title: string;
+        bookmarks: Bookmark[];
+    },
+) => {
     const entries = bookmarks.map((bookmark) =>
         makeBookmarkEntry(videoId, bookmark)
     );
 
     return Layout({
-        title: `Bookmarks for "${title.value}"`,
+        title: `Bookmarks for "${title}"`,
         children: [html`
-            <h1>Bookmarks for &ldquo;${title.value}&rdquo;</h1>
+            <h1>Bookmarks for &ldquo;${title}&rdquo;</h1>
             <ol>${entries}</ol>
+            <hr>
+            <a href="/">What is this?</a>
         `],
     });
 };
@@ -77,6 +66,21 @@ export const BookmarkList = async (videoId: string) => {
 export const Homepage = () => {
     return Layout({
         title: "Stream Bookmarks",
-        children: [html`<p>// TODO: description</p>`],
+        children: [html`
+            <h1>Stream Bookmarks</h1>
+            <p>
+                This is a tiny utility to bookmark where you left a YouTube stream, by making a Nightbot Custom API.
+                It's currently restricted to <a href="https://youtube.com/@ArgonMatrix">ArgonMatrix</a>'s channel only.
+            </p>
+            <p>
+                This app's source code is <!-- TODO --> available on GitHub,
+                and you can find more of my stuff at <a href="https://mabi.land/">mabi.land</a>. 
+            </p>
+            <h2>Usage</h2>
+            <p>
+                First, make a bookmark using the !bookmark command in chat. Then, when you want to know where you left off,
+                replace <code>youtube.com/watch?v=</code> in the URL with <code>[TBA]</code>. <!-- TODO: example -->
+            </p>
+        `],
     });
 };
