@@ -62,8 +62,8 @@ export async function createBookmark(
     const key = ["bookmarks", stream.videoId, username];
     await kv.set(key, bookmark);
 
-    // TODO: put a link here, with highlight
+    // TODO: add username highlight when that's done
     return `${username} creates a bookmark ${
         formatTime(bookmark.secondsSinceStart)
-    } into the stream: [LINK]`;
+    } into the stream: https://bookmarks.mabi.land/${stream.videoId}`;
 }
