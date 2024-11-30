@@ -78,8 +78,8 @@ export const Homepage = () => {
             </p>
             <h2>Usage</h2>
             <p>
-                First, make a bookmark using the !bookmark command in chat. Then, when you want to know where you left off,
-                replace <code>youtube.com/watch?v=</code> in the URL with <code>bookmarks.mabi.land/</code>. <!-- TODO: example -->
+                First, make a bookmark using the <code>!bookmark</code> command in chat. Then, when you want to know where you left off,
+                replace <code>youtube.com/watch?v=</code> in the video's URL with <code>bookmarks.mabi.land/</code>. <!-- TODO: example -->
             </p>
         `],
     });
