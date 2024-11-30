@@ -1,13 +1,16 @@
+import * as v from "@valibot/valibot";
 import { HTTPException } from "hono/http-exception";
 import { kv } from "./kv.ts";
 import { getChannelLivestream } from "./youtube.ts";
 
 const CHANNEL_ID_REGEX = /^UC([-_a-zA-Z0-9]{22})$/;
 
-interface Bookmark {
-    username: string;
-    secondsSinceStart: number;
-}
+export const BookmarkSchema = v.object({
+    username: v.string(),
+    secondsSinceStart: v.number(),
+});
+
+export type Bookmark = v.InferOutput<typeof BookmarkSchema>;
 
 export async function createBookmark(
     channelString: string,
