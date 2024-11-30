@@ -9,6 +9,8 @@ import { BookmarkList, Homepage, Layout } from "./ui.ts";
 export function createApp() {
     const app = new Hono()
         .onError((error, ctx) => {
+            console.log(error);
+
             // TODO: Nice error pages except on /create-bookmark
             if (error instanceof HTTPException) {
                 return ctx.text(`Error: ${error.message}`, error.status);
