@@ -36,6 +36,11 @@ async function searchForLivestream(
             throw new Error("Couldn't get video ID");
         }
 
+        const title = item.snippet?.title;
+        if (!title) {
+            throw new Error("Couldn't get stream title");
+        }
+
         const listResult = await youtube.videos.list({
             part: ["liveStreamingDetails"],
             id: [videoId],
@@ -56,6 +61,7 @@ async function searchForLivestream(
         kv.set(["channelCurrentLivestream", channelId], stream, {
             expireIn: 6 * 60 * 60 * 1000,
         });
+        kv.set(["streamTitle", videoId], title);
 
         console.log("put", stream, "in cache");
 
