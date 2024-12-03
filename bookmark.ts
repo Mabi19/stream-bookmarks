@@ -63,10 +63,16 @@ export async function createBookmark(
     };
 
     const key = ["bookmarks", stream.videoId, username];
+    const alreadyExists = (await kv.get(key)).versionstamp != null;
+    // overwrite
     await kv.set(key, bookmark);
 
+    const actionMessage = alreadyExists
+        ? "moves their bookmark"
+        : "creates their bookmark";
+
     // TODO: add username highlight when that's done
-    return `${username} creates a bookmark ${
+    return `${username} ${actionMessage} ${
         formatTime(bookmark.secondsSinceStart)
     } into the stream: https://bookmarks.mabi.land/${stream.videoId}`;
 }
