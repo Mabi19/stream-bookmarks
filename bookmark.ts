@@ -56,7 +56,10 @@ export async function createBookmark(
 
     const bookmark: Bookmark = {
         username,
-        secondsSinceStart: (Date.now() - stream.startTime.getTime()) / 1000,
+        // round off fractional seconds
+        secondsSinceStart: Math.floor(
+            (Date.now() - stream.startTime.getTime()) / 1000,
+        ),
     };
 
     const key = ["bookmarks", stream.videoId, username];

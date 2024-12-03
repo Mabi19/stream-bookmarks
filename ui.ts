@@ -30,9 +30,6 @@ function makeBookmarkEntry(
     videoId: string,
     { username, secondsSinceStart }: Bookmark,
 ) {
-    // round off fractional seconds
-    secondsSinceStart = Math.floor(secondsSinceStart);
-
     const link =
         `https://youtube.com/watch?v=${videoId}&t=${secondsSinceStart}`;
 
