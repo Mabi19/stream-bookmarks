@@ -71,7 +71,7 @@ export async function createBookmark(
 
     const actionMessage = alreadyExists
         ? "moves their bookmark"
-        : "creates their bookmark";
+        : "creates a bookmark";
 
     const link = `https://bookmarks.mabi.land/${stream.videoId}?h=${
         encodeURIComponent(username)
