@@ -14,6 +14,8 @@ export const BookmarkSchema = v.object({
 export type Bookmark = v.InferOutput<typeof BookmarkSchema>;
 
 export function formatTime(duration: number) {
+    // trim off fractional seconds just to be safe
+    duration = Math.floor(duration);
     const seconds = duration % 60;
     const minutes = (duration - seconds) / 60;
     const hours = (duration - seconds - minutes * 60) / 3600;
