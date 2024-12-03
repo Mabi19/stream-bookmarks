@@ -73,8 +73,11 @@ export async function createBookmark(
         ? "moves their bookmark"
         : "creates their bookmark";
 
-    // TODO: add username highlight when that's done
+    const link = `https://bookmarks.mabi.land/${stream.videoId}?h=${
+        encodeURIComponent(username)
+    }`;
+
     return `${username} ${actionMessage} ${
         formatTime(bookmark.secondsSinceStart)
-    } into the stream: https://bookmarks.mabi.land/${stream.videoId}`;
+    } into the stream: ${link}`;
 }
