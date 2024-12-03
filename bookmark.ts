@@ -17,7 +17,7 @@ export function formatTime(duration: number) {
     // trim off fractional seconds just to be safe
     duration = Math.floor(duration);
     const seconds = duration % 60;
-    const minutes = (duration - seconds) / 60;
+    const minutes = ((duration - seconds) / 60) % 60;
     const hours = (duration - seconds - minutes * 60) / 3600;
     return `${hours}:${minutes.toString().padStart(2, "0")}:${
         seconds.toString().padStart(2, "0")
