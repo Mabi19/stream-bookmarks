@@ -46,8 +46,6 @@ export function createApp() {
         .get(
             "/:videoId",
             async (ctx) => {
-                // TODO: username highlighting
-
                 const videoId = ctx.req.param("videoId");
                 const title = await kv.get(["streamTitle", videoId]);
                 if (
@@ -66,6 +64,7 @@ export function createApp() {
                         404,
                     );
                 }
+                const highlightedUser = ctx.req.query("h");
 
                 const bookmarks = (await Array.fromAsync(
                     kv.list({ prefix: ["bookmarks", videoId] }),
@@ -76,7 +75,12 @@ export function createApp() {
                     );
 
                 return ctx.html(
-                    BookmarkList({ videoId, title: title.value, bookmarks }),
+                    BookmarkList({
+                        videoId,
+                        title: title.value,
+                        bookmarks,
+                        highlightedUser,
+                    }),
                 );
             },
         )

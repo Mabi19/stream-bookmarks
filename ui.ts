@@ -29,24 +29,29 @@ export const Layout = (
 function makeBookmarkEntry(
     videoId: string,
     { username, secondsSinceStart }: Bookmark,
+    highlightedUser?: string,
 ) {
-    const link =
-        `https://youtube.com/watch?v=${videoId}&t=${secondsSinceStart}`;
+    const url = `https://youtube.com/watch?v=${videoId}&t=${secondsSinceStart}`;
+    const isHighlighted = username == highlightedUser;
+    const anchor = html`<a href="${url}">${username}: ${
+        formatTime(secondsSinceStart)
+    }</a>`;
 
     return html`<li>
-        <a href="${link}">${username}: ${formatTime(secondsSinceStart)}</a>
+        ${isHighlighted ? html`<mark>${anchor}</mark>` : anchor}
     </li>`;
 }
 
 export const BookmarkList = (
-    { videoId, title, bookmarks }: {
+    { videoId, title, bookmarks, highlightedUser }: {
         videoId: string;
         title: string;
         bookmarks: Bookmark[];
+        highlightedUser?: string;
     },
 ) => {
     const entries = bookmarks.map((bookmark) =>
-        makeBookmarkEntry(videoId, bookmark)
+        makeBookmarkEntry(videoId, bookmark, highlightedUser)
     );
 
     return Layout({
