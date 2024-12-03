@@ -53,7 +53,7 @@ async function searchForLivestream(
         if (!title) {
             throw new Error("Couldn't get stream title");
         }
-        console.log(`title: ${title}`);
+        console.debug(`title: ${title}`);
 
         const stream: YoutubeStream = {
             videoId,
@@ -65,7 +65,7 @@ async function searchForLivestream(
         });
         kv.set(["streamTitle", videoId], title);
 
-        console.log("put", stream, "in cache");
+        console.debug("put", stream, "in cache");
 
         return stream;
     } else {
