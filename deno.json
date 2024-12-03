@@ -1,6 +1,6 @@
 {
     "tasks": {
-        "dev": "deno run --watch main.ts"
+        "dev": "deno run --watch -A --unstable-kv --env-file main.ts"
     },
     "imports": {
         "@valibot/valibot": "jsr:@valibot/valibot@^0.42.1",
