@@ -36,13 +36,8 @@ async function searchForLivestream(
             throw new Error("Couldn't get video ID");
         }
 
-        const title = item.snippet?.title;
-        if (!title) {
-            throw new Error("Couldn't get stream title");
-        }
-
         const listResult = await youtube.videos.list({
-            part: ["liveStreamingDetails"],
+            part: ["snippet", "liveStreamingDetails"],
             id: [videoId],
         });
 
@@ -52,6 +47,13 @@ async function searchForLivestream(
             // stream not started yet (or other error)
             return null;
         }
+
+        // get from list result because search returns it escaped for some reason
+        const title = listResult.data.items?.[0]?.snippet?.title;
+        if (!title) {
+            throw new Error("Couldn't get stream title");
+        }
+        console.log(`title: ${title}`);
 
         const stream: YoutubeStream = {
             videoId,
