@@ -4,7 +4,7 @@ import { html } from "hono/html";
 import { HTTPException } from "hono/http-exception";
 import { BookmarkSchema, createBookmark } from "./bookmark.ts";
 import { kv } from "./kv.ts";
-import { BookmarkList, Homepage, Layout } from "./ui.ts";
+import { BookmarkList, Homepage, Layout, NotFound } from "./ui.ts";
 
 export function createApp() {
     const app = new Hono()
@@ -23,7 +23,7 @@ export function createApp() {
                 );
             }
         })
-        // TODO: nice 404 page
+        .notFound((ctx) => ctx.html(NotFound(), 404))
         .get("/create-bookmark", async (ctx) => {
             ctx.res.headers.set("Cache-Control", "no-store");
 

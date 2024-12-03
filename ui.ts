@@ -83,3 +83,13 @@ export const Homepage = () => {
         `],
     });
 };
+
+export const NotFound = () => {
+    return Layout({
+        title: "Not Found",
+        children: [html`
+            <h1>Not Found</h1>
+            <p>There's nothing here...</p>
+        `],
+    });
+};
