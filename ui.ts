@@ -78,12 +78,14 @@ export const Homepage = () => {
             </p>
             <p>
                 This app's source code is <a href="https://github.com/Mabi19/stream-bookmarks">available on GitHub</a>,
-                and you can find more of my stuff at <a href="https://mabi.land/">mabi.land</a>. 
+                and you can find more of my stuff at <a href="https://mabi.land/">mabi.land</a>.
             </p>
             <h2>Usage</h2>
             <p>
                 First, make a bookmark using the <code>!bookmark</code> command in chat. Then, when you want to know where you left off,
-                replace <code>youtube.com/watch?v=</code> in the video's URL with <code>bookmarks.mabi.land/</code>. <!-- TODO: example -->
+                replace <code>youtube.com/watch?v=</code> in the video's URL with <code>bookmarks.mabi.land/</code>.
+                For example, <a href="https://www.youtube.com/watch?v=I89G7VFWCNw">https://www.youtube.com/watch?v=I89G7VFWCNw</a>
+                becomes <a href="https://bookmarks.mabi.land/I89G7VFWCNw">https://bookmarks.mabi.land/I89G7VFWCNw</a>.
             </p>
         `],
     });
