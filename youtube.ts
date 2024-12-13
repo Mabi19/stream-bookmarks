@@ -1,5 +1,4 @@
 import * as v from "@valibot/valibot";
-import { google } from "googleapis";
 import { kv } from "./kv.ts";
 
 const apiKey = Deno.env.get("YOUTUBE_API_KEY");
@@ -7,10 +6,35 @@ if (!apiKey) {
     throw new Error("YOUTUBE_API_KEY env var needs to be set");
 }
 
-const youtube = google.youtube({
-    version: "v3",
-    auth: apiKey,
-});
+// These two API wrapper functions are specialized for what we want.
+
+async function youtubeSearch(channelId: string) {
+    const response = await fetch(
+        `https://www.googleapis.com/youtube/v3/search?key=${
+            encodeURIComponent(apiKey!)
+        }&part=snippet&channelId=${
+            encodeURIComponent(channelId)
+        }&eventType=live&type=video`,
+    );
+    if (!response.ok) {
+        console.error("YT API Error:", await response.json());
+        throw new Error("The YouTube API returned an error");
+    }
+    return await response.json();
+}
+
+async function youtubeVideosList(videoId: string) {
+    const response = await fetch(
+        `https://www.googleapis.com/youtube/v3/videos?key=${
+            encodeURIComponent(apiKey!)
+        }&part=snippet,liveStreamingDetails&id=${encodeURIComponent(videoId)}`,
+    );
+    if (!response.ok) {
+        console.error("YT API Error:", await response.json());
+        throw new Error("The YouTube API returned an error");
+    }
+    return await response.json();
+}
 
 const YoutubeStreamSchema = v.object({
     videoId: v.string(),
@@ -21,14 +45,9 @@ type YoutubeStream = v.InferOutput<typeof YoutubeStreamSchema>;
 async function searchForLivestream(
     channelId: string,
 ): Promise<YoutubeStream | null> {
-    const searchResult = await youtube.search.list({
-        part: ["snippet"],
-        channelId,
-        eventType: "live",
-        type: ["video"],
-    });
+    const searchResult = await youtubeSearch(channelId);
 
-    const item = searchResult.data.items?.[0];
+    const item = searchResult.items?.[0];
     if (item) {
         // found the livestream! get its start time
         const videoId = item.id?.videoId;
@@ -36,12 +55,9 @@ async function searchForLivestream(
             throw new Error("Couldn't get video ID");
         }
 
-        const listResult = await youtube.videos.list({
-            part: ["snippet", "liveStreamingDetails"],
-            id: [videoId],
-        });
+        const listResult = await youtubeVideosList(videoId);
 
-        const startTimeString = listResult.data.items?.[0]?.liveStreamingDetails
+        const startTimeString = listResult.items?.[0]?.liveStreamingDetails
             ?.actualStartTime;
         if (!startTimeString) {
             // stream not started yet (or other error)
@@ -49,7 +65,7 @@ async function searchForLivestream(
         }
 
         // get from list result because search returns it escaped for some reason
-        const title = listResult.data.items?.[0]?.snippet?.title;
+        const title = listResult.items?.[0]?.snippet?.title;
         if (!title) {
             throw new Error("Couldn't get stream title");
         }
@@ -75,12 +91,9 @@ async function searchForLivestream(
 }
 
 async function verifyLivestream(stream: YoutubeStream): Promise<boolean> {
-    const result = await youtube.videos.list({
-        part: ["snippet"],
-        id: [stream.videoId],
-    });
+    const result = await youtubeVideosList(stream.videoId);
 
-    return result.data.items?.[0]?.snippet?.liveBroadcastContent == "live";
+    return result.items?.[0]?.snippet?.liveBroadcastContent == "live";
 }
 
 export async function getChannelLivestream(
