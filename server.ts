@@ -1,19 +1,30 @@
 import * as v from "@valibot/valibot";
 import { Hono } from "hono";
+import { bearerAuth } from "hono/bearer-auth";
 import { html } from "hono/html";
 import { HTTPException } from "hono/http-exception";
-import { BookmarkSchema, createBookmark } from "./bookmark.ts";
+import { BookmarkSchema, countBookmarks, createBookmark } from "./bookmark.ts";
 import { kv } from "./kv.ts";
 import { BookmarkList, Homepage, Layout, NotFound } from "./ui.ts";
 
 export function createApp() {
+    const recountKey = Deno.env.get("RECOUNT_KEY");
+    if (!recountKey) {
+        throw new Error("RECOUNT_KEY env var needs to be set");
+    }
+
     const app = new Hono()
-        .onError((error, ctx) => {
+        .onError(async (error, ctx) => {
             console.error(error);
 
             // TODO: Nice error pages except on /create-bookmark
             if (error instanceof HTTPException) {
-                return ctx.text(`Error: ${error.message}`, error.status);
+                const message = error.message ||
+                    (await error.res?.text());
+                return ctx.text(
+                    `Error: ${message}`,
+                    error.status,
+                );
             } else if (error instanceof Error) {
                 return ctx.text(`Error: ${error.message}`, 500);
             } else {
@@ -24,6 +35,29 @@ export function createApp() {
             }
         })
         .notFound((ctx) => ctx.html(NotFound(), 404))
+        .post(
+            "/recount",
+            bearerAuth({ token: recountKey }),
+            async (ctx) => {
+                const oldCount = (await kv.get(["count"])).value;
+                if (oldCount && !(oldCount instanceof Deno.KvU64)) {
+                    throw new Error("Invalid count value in database");
+                }
+
+                const t1 = performance.now();
+                const newCount = await countBookmarks();
+                const t2 = performance.now();
+                await kv.set(["count"], new Deno.KvU64(BigInt(newCount)));
+
+                return ctx.json({
+                    oldCount:
+                        (oldCount as Deno.KvU64 | null)?.value?.toString() ??
+                            null,
+                    newCount,
+                    timeTaken: `${(t2 - t1)}ms`,
+                });
+            },
+        )
         .get("/create-bookmark", async (ctx) => {
             ctx.res.headers.set("Cache-Control", "no-store");
 
