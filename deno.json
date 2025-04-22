@@ -13,5 +13,8 @@
         ],
         "include": [],
         "entrypoint": "main.ts"
+    },
+    "fmt": {
+        "indentWidth": 4
     }
 }
