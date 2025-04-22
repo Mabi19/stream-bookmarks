@@ -65,13 +65,26 @@ export async function createBookmark(
     };
 
     const key = ["bookmarks", stream.videoId, username];
-    const alreadyExists = (await kv.get(key)).versionstamp != null;
-    // overwrite
-    await kv.set(key, bookmark);
 
-    const actionMessage = alreadyExists
-        ? "moves their bookmark"
-        : "creates a bookmark";
+    let res = { ok: false };
+    let actionMessage!: string;
+    while (!res.ok) {
+        const currentValue = await kv.get(key);
+        if (currentValue.versionstamp == null) {
+            res = await kv.atomic()
+                .check(currentValue)
+                .set(key, bookmark)
+                .sum(["count"], 1n)
+                .commit();
+            actionMessage = "creates a bookmark";
+        } else {
+            res = await kv.atomic()
+                .check(currentValue)
+                .set(key, bookmark)
+                .commit();
+            actionMessage = "moves their bookmark";
+        }
+    }
 
     const link = `https://bookmarks.mabi.land/${stream.videoId}?h=${
         encodeURIComponent(username)
@@ -80,4 +93,12 @@ export async function createBookmark(
     return `${username} ${actionMessage} ${
         formatTime(bookmark.secondsSinceStart)
     } into the stream: ${link}`;
+}
+
+export async function countBookmarks() {
+    let count = 0;
+    for await (const _ of kv.list({ prefix: ["bookmarks"] })) {
+        count++;
+    }
+    return count;
 }

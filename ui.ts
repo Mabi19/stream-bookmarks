@@ -1,6 +1,7 @@
 import { html } from "hono/html";
 import { PropsWithChildren } from "hono/jsx";
 import { type Bookmark, formatTime } from "./bookmark.ts";
+import { kv } from "./kv.ts";
 
 export const Layout = (
     { title, children }: PropsWithChildren<{ title: string }>,
@@ -67,14 +68,21 @@ export const BookmarkList = (
     });
 };
 
-export const Homepage = () => {
+export const Homepage = async () => {
+    const bookmarkCount = (await kv.get(["count"])).value;
+    if (!(bookmarkCount == null || bookmarkCount instanceof Deno.KvU64)) {
+        throw new Error("Invalid count value in database");
+    }
+
     return Layout({
         title: "Stream Bookmarks",
         children: [html`
             <h1>Stream Bookmarks</h1>
             <p>
-                This is a tiny (&lt; 400 lines of code) utility to bookmark where you left a YouTube stream, by making a Nightbot Custom API.
-                It's currently restricted to <a href="https://youtube.com/@ArgonMatrix">ArgonMatrix</a>'s channel only.
+                This is a tiny (&lt; 500 lines of code) utility to bookmark where you left a YouTube stream, by making a Nightbot Custom API.
+                Bookmarks are stored indefinitely, for now at least; there are currently <strong>${bookmarkCount?.value}</strong> bookmarks in the database.
+                It's currently restricted to <a href="https://youtube.com/@ArgonMatrix">ArgonMatrix</a>'s channel only;
+                if you're a YouTube streamer interested this tool please reach out to me on Discord!
             </p>
             <p>
                 This app's source code is <a href="https://github.com/Mabi19/stream-bookmarks">available on GitHub</a>,
