@@ -33,7 +33,7 @@ export async function createBookmark(
 
     const provider = channelData.get("provider");
     if (provider != "youtube") {
-        throw new HTTPException(418, { message: "Only YouTube is supported" });
+        return "Error: Only YouTube is supported";
     }
 
     const username = userData.get("displayName");
@@ -44,16 +44,12 @@ export async function createBookmark(
     }
 
     if (!config.allowedChannels.includes(channelId)) {
-        throw new HTTPException(403, {
-            message: "This channel isn't whitelisted",
-        });
+        return "Error: This channel isn't whitelisted";
     }
 
     const stream = await getChannelLivestream(channelId);
     if (!stream) {
-        throw new HTTPException(400, {
-            message: "This channel isn't currently streaming",
-        });
+        return "Error: Couldn't find livestream! Note that due to YouTube API limitations, bookmarks don't work on members-only content.";
     }
 
     const bookmark: Bookmark = {
