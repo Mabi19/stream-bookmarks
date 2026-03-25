@@ -1,16 +1,16 @@
 {
-  "version": "4",
+  "version": "5",
   "specifiers": {
-    "jsr:@hono/hono@^4.6.12": "4.6.12",
-    "jsr:@valibot/valibot@~0.42.1": "0.42.1",
+    "jsr:@hono/hono@^4.12.9": "4.12.9",
+    "jsr:@valibot/valibot@^1.3.1": "1.3.1",
     "npm:@types/node@*": "18.16.19"
   },
   "jsr": {
-    "@hono/hono@4.6.12": {
-      "integrity": "fa0b97fa7c3292f0d9957109ac07a475fe485868795b71b8e3114c284152cdb5"
+    "@hono/hono@4.12.9": {
+      "integrity": "53c2b0a721c1d782e6a347ad5bf15a3235ff624b98859c21f779b7ee2f5e040e"
     },
-    "@valibot/valibot@0.42.1": {
-      "integrity": "ba0f6f7964aaeec0e4b1f793d575061f325ae6254cbb9d7ff01fb65068a0a23b"
+    "@valibot/valibot@1.3.1": {
+      "integrity": "635faaec9d32a25efca7b4614e7a07306cc03937bfd0679e05530d31081bc501"
     }
   },
   "npm": {
@@ -20,8 +20,8 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@hono/hono@^4.6.12",
-      "jsr:@valibot/valibot@~0.42.1"
+      "jsr:@hono/hono@^4.12.9",
+      "jsr:@valibot/valibot@^1.3.1"
     ]
   }
 }

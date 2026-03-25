@@ -60,6 +60,9 @@ async function searchForLivestream(
         const startTimeString = listResult.items?.[0]?.liveStreamingDetails
             ?.actualStartTime;
         if (!startTimeString) {
+            console.debug(
+                `finding stream for channel ${channelId} failed by start time`,
+            );
             // stream not started yet (or other error)
             return null;
         }
@@ -85,6 +88,9 @@ async function searchForLivestream(
 
         return stream;
     } else {
+        console.debug(
+            `finding stream for channel ${channelId} failed by search`,
+        );
         // no livestream
         return null;
     }
