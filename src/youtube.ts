@@ -1,20 +1,14 @@
-import * as v from "@valibot/valibot";
-import { kv } from "./kv.ts";
-
-const apiKey = Deno.env.get("YOUTUBE_API_KEY");
-if (!apiKey) {
-    throw new Error("YOUTUBE_API_KEY env var needs to be set");
-}
+import { env } from "cloudflare:workers";
+import * as v from "valibot";
+import * as db from "./db";
 
 // These two API wrapper functions are specialized for what we want.
 
-async function youtubeSearch(channelId: string) {
+async function youtubeSearch(channelId: string): Promise<any> {
     const response = await fetch(
-        `https://www.googleapis.com/youtube/v3/search?key=${
-            encodeURIComponent(apiKey!)
-        }&part=snippet&channelId=${
-            encodeURIComponent(channelId)
-        }&eventType=live&type=video`,
+        `https://www.googleapis.com/youtube/v3/search?key=${encodeURIComponent(
+            env.YOUTUBE_API_KEY,
+        )}&part=snippet&channelId=${encodeURIComponent(channelId)}&eventType=live&type=video`,
     );
     if (!response.ok) {
         console.error("YT API Error:", await response.json());
@@ -23,11 +17,11 @@ async function youtubeSearch(channelId: string) {
     return await response.json();
 }
 
-async function youtubeVideosList(videoId: string) {
+async function youtubeVideosList(videoId: string): Promise<any> {
     const response = await fetch(
-        `https://www.googleapis.com/youtube/v3/videos?key=${
-            encodeURIComponent(apiKey!)
-        }&part=snippet,liveStreamingDetails&id=${encodeURIComponent(videoId)}`,
+        `https://www.googleapis.com/youtube/v3/videos?key=${encodeURIComponent(
+            env.YOUTUBE_API_KEY,
+        )}&part=snippet,liveStreamingDetails&id=${encodeURIComponent(videoId)}`,
     );
     if (!response.ok) {
         console.error("YT API Error:", await response.json());
@@ -42,9 +36,7 @@ const YoutubeStreamSchema = v.object({
 });
 type YoutubeStream = v.InferOutput<typeof YoutubeStreamSchema>;
 
-async function searchForLivestream(
-    channelId: string,
-): Promise<YoutubeStream | null> {
+async function searchForLivestream(channelId: string): Promise<YoutubeStream | null> {
     const searchResult = await youtubeSearch(channelId);
 
     const item = searchResult.items?.[0];
@@ -57,12 +49,9 @@ async function searchForLivestream(
 
         const listResult = await youtubeVideosList(videoId);
 
-        const startTimeString = listResult.items?.[0]?.liveStreamingDetails
-            ?.actualStartTime;
+        const startTimeString = listResult.items?.[0]?.liveStreamingDetails?.actualStartTime;
         if (!startTimeString) {
-            console.debug(
-                `finding stream for channel ${channelId} failed by start time`,
-            );
+            console.debug(`finding stream for channel ${channelId} failed by start time`);
             // stream not started yet (or other error)
             return null;
         }
@@ -79,18 +68,16 @@ async function searchForLivestream(
             startTime: new Date(startTimeString),
         };
 
-        kv.set(["channelCurrentLivestream", channelId], stream, {
-            expireIn: 6 * 60 * 60 * 1000,
+        env.KV.put(`channelCurrentLivestream:${channelId}`, JSON.stringify(stream), {
+            expirationTtl: 6 * 60 * 60,
         });
-        kv.set(["streamTitle", videoId], title);
+        await db.INSERT_STREAM_TITLE.bind(videoId, title).run();
 
         console.debug("put", stream, "in cache");
 
         return stream;
     } else {
-        console.debug(
-            `finding stream for channel ${channelId} failed by search`,
-        );
+        console.debug(`finding stream for channel ${channelId} failed by search`);
         // no livestream
         return null;
     }
@@ -102,13 +89,11 @@ async function verifyLivestream(stream: YoutubeStream): Promise<boolean> {
     return result.items?.[0]?.snippet?.liveBroadcastContent == "live";
 }
 
-export async function getChannelLivestream(
-    channelId: string,
-): Promise<YoutubeStream | null> {
-    const cachedEntry = await kv.get(["channelCurrentLivestream", channelId]);
-    if (cachedEntry.versionstamp != null) {
+export async function getChannelLivestream(channelId: string): Promise<YoutubeStream | null> {
+    const cachedEntry = await env.KV.get(`channelCurrentLivestream:${channelId}`);
+    if (cachedEntry != null) {
         // we have a potential candidate!
-        const streamData = v.safeParse(YoutubeStreamSchema, cachedEntry.value);
+        const streamData = v.safeParse(YoutubeStreamSchema, JSON.parse(cachedEntry));
         if (!streamData.success) {
             throw new Error("Unexpected value in database");
         }
@@ -117,7 +102,7 @@ export async function getChannelLivestream(
             return streamData.output;
         } else {
             // delete the key so that the API query isn't repeated unnecessarily
-            await kv.delete(["channelCurrentLivestream", channelId]);
+            await env.KV.delete(`channelCurrentLivestream:${channelId}`);
             // there may be a new live stream, fall through
         }
     }

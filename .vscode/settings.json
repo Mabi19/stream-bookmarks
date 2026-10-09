@@ -1,6 +1,5 @@
 {
-    "[typescript]": {
-        "editor.defaultFormatter": "denoland.vscode-deno"
-    },
-    "deno.enable": true,
+	"files.associations": {
+		"wrangler.json": "jsonc"
+	}
 }

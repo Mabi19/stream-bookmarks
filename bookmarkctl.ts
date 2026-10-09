@@ -4,7 +4,6 @@ import type { Bookmark } from "./bookmark.ts";
 function exitWithUsage() {
     console.log(
         "Usage: bookmarkctl new <server URL> <channel ID> <username>\n\
-        or:     bookmarkctl recount <server URL>\n\
         or:     bookmarkctl export <KV URL> <path>",
     );
     Deno.exit(1);
@@ -25,31 +24,8 @@ if (mode == "new") {
         await fetch(`${serverUrl}/create-bookmark`, {
             headers: {
                 "Nightbot-Response-URL": "http://example.com",
-                "Nightbot-User":
-                    `name=${username}&displayName=${username}&provider=youtube&providerId=nonexisty&userLevel=idk`,
-                "Nightbot-Channel":
-                    `name=test&displayName=Placeholder&provider=youtube&providerId=${channelId}`,
-            },
-        }).then((res) => res.text()),
-    );
-} else if (mode == "recount") {
-    if (Deno.args.length != 2) {
-        exitWithUsage();
-    }
-
-    const key = Deno.env.get("RECOUNT_KEY");
-    if (!key) {
-        console.log("RECOUNT_KEY env var needs to be set");
-        Deno.exit(1);
-    }
-
-    const serverUrl = Deno.args[1];
-
-    console.log(
-        await fetch(`${serverUrl}/recount`, {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${key}`,
+                "Nightbot-User": `name=${username}&displayName=${username}&provider=youtube&providerId=nonexisty&userLevel=idk`,
+                "Nightbot-Channel": `name=test&displayName=Placeholder&provider=youtube&providerId=${channelId}`,
             },
         }).then((res) => res.text()),
     );
@@ -69,7 +45,7 @@ if (mode == "new") {
         bookmarks[videoId].push(bookmark.value as Bookmark);
     }
     const streamTitles: Record<string, string> = {};
-    for await (const streamTitle of kv.list({ "prefix": ["streamTitle"] })) {
+    for await (const streamTitle of kv.list({ prefix: ["streamTitle"] })) {
         const videoId = streamTitle.key[1] as string;
         streamTitles[videoId] = streamTitle.value as string;
     }
@@ -84,9 +60,7 @@ if (mode == "new") {
     const data: {
         bookmarks: Record<string, Bookmark[]>;
         streamTitles: Record<string, string>;
-    } = JSON.parse(
-        await Deno.readTextFile(path),
-    );
+    } = JSON.parse(await Deno.readTextFile(path));
     const kv = await Deno.openKv(kvUrl);
     for (const videoId of Object.keys(data.bookmarks)) {
         for (const bookmark of data.bookmarks[videoId]) {
