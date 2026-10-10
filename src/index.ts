@@ -38,7 +38,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
             });
         }
 
-        return ctx.text(await createBookmark(channelString, userString));
+        return ctx.text(await createBookmark(channelString, userString, ctx.req.query("arg")));
     })
     .get("/:videoId", async (ctx) => {
         const videoId = ctx.req.param("videoId");

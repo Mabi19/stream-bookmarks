@@ -22,7 +22,39 @@ export function formatTime(duration: number) {
     return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
 
-export async function createBookmark(channelString: string, userString: string): Promise<string> {
+export function parseTime(duration: string): number | undefined {
+    const parts = duration.split(":");
+    if (parts.length == 2) {
+        const [minutes, seconds] = parts;
+        if (!/^[0-5][0-9]$/.test(seconds)) {
+            return undefined;
+        }
+        if (minutes != "0" && !/^[1-9][0-9]*$/.test(minutes)) {
+            return undefined;
+        }
+        return parseInt(minutes) * 60 + parseInt(seconds);
+    } else if (parts.length == 3) {
+        const [hours, minutes, seconds] = parts;
+        if (!/^[0-5][0-9]$/.test(seconds)) {
+            return undefined;
+        }
+        if (!/^[0-5][0-9]$/.test(minutes)) {
+            return undefined;
+        }
+        if (hours != "0" && !/^[1-9][0-9]*$/.test(hours)) {
+            return undefined;
+        }
+        return parseInt(hours) * 3600 + parseInt(minutes) * 60 + parseInt(seconds);
+    }
+
+    return undefined;
+}
+
+export async function createBookmark(
+    channelString: string,
+    userString: string,
+    timeString?: string,
+): Promise<string> {
     const channelData = new URLSearchParams(channelString);
     const userData = new URLSearchParams(userString);
 
@@ -47,12 +79,11 @@ export async function createBookmark(channelString: string, userString: string):
         return "Error: Couldn't find livestream! Note that due to YouTube API limitations, bookmarks don't work on members-only content.";
     }
 
+    const parsedTime = timeString ? parseTime(timeString) : undefined;
     // round off fractional seconds
-    const time = Math.floor((Date.now() - stream.startTime.getTime()) / 1000);
+    const time = parsedTime ?? Math.floor((Date.now() - stream.startTime.getTime()) / 1000);
 
-    const wasInserted = await db.SET_BOOKMARK.bind(stream.videoId, username, time).first(
-        "is_inserted",
-    );
+    const wasInserted = await db.setBookmark(stream.videoId, username, time);
     const actionMessage = wasInserted ? "creates a bookmark" : "moves their bookmark";
 
     const link = `https://bookmarks.mabi.land/${stream.videoId}?h=${encodeURIComponent(username)}`;

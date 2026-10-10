@@ -32,7 +32,11 @@ async function youtubeVideosList(videoId: string): Promise<any> {
 
 const YoutubeStreamSchema = v.object({
     videoId: v.string(),
-    startTime: v.date(),
+    startTime: v.pipe(
+        v.string(),
+        v.transform((input) => new Date(input)),
+        v.check((date) => !isNaN(date.getTime())),
+    ),
 });
 type YoutubeStream = v.InferOutput<typeof YoutubeStreamSchema>;
 
@@ -68,10 +72,10 @@ async function searchForLivestream(channelId: string): Promise<YoutubeStream | n
             startTime: new Date(startTimeString),
         };
 
-        env.KV.put(`channelCurrentLivestream:${channelId}`, JSON.stringify(stream), {
+        await env.KV.put(`channelCurrentLivestream:${channelId}`, JSON.stringify(stream), {
             expirationTtl: 6 * 60 * 60,
         });
-        await db.INSERT_STREAM_TITLE.bind(videoId, title).run();
+        await db.setStreamTitle(videoId, title);
 
         console.debug("put", stream, "in cache");
 
