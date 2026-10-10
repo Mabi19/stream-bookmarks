@@ -7,5 +7,5 @@ CREATE TABLE IF NOT EXISTS bookmarks (
 
 CREATE TABLE IF NOT EXISTS stream_titles (
     video_id TEXT PRIMARY KEY NOT NULL,
-    title TEXT NOT NULL,
+    title TEXT NOT NULL
 ) STRICT;
