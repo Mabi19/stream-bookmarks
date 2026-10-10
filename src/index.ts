@@ -43,7 +43,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
     .get("/:videoId", async (ctx) => {
         const videoId = ctx.req.param("videoId");
         // TODO: test the error case
-        const title = await db.GET_STREAM_TITLE.bind(videoId).first<string>("title");
+        const title = await db.getStreamTitle(videoId);
         if (title == null) {
             return ctx.html(
                 Layout({
@@ -60,7 +60,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
         }
         const highlightedUser = ctx.req.query("h");
 
-        const bookmarkData = await db.GET_VIDEO_BOOKMARKS.bind(videoId).run();
+        const bookmarkData = await db.getVideoBookmarks(videoId);
         const bookmarks = bookmarkData.results.map((entry) => v.parse(BookmarkSchema, entry));
 
         return ctx.html(
@@ -73,7 +73,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
         );
     })
     .get("/", async (ctx) => {
-        const count = await db.COUNT_BOOKMARKS.first<number>("count");
+        const count = await db.countBookmarks();
         return ctx.html(Homepage({ bookmarkCount: count }));
     });
 

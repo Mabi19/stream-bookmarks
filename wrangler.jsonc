@@ -11,6 +11,8 @@
         "enabled": true,
     },
     "upload_source_maps": true,
+    "workers_dev": true,
+    "preview_urls": true,
     "secrets": {
         "required": ["YOUTUBE_API_KEY"],
     },
