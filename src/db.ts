@@ -1,13 +1,6 @@
 import { env } from "cloudflare:workers";
 
-let queries: Record<string, D1PreparedStatement | null> = {
-    COUNT_BOOKMARKS: null,
-    GET_VIDEO_BOOKMARKS: null,
-    GET_STREAM_TITLE: null,
-    SET_STREAM_TITLE: null,
-    UPDATE_BOOKMARK_TIME: null,
-    INSERT_BOOKMARK: null,
-};
+let queries: Record<string, D1PreparedStatement | null> = {};
 let queriesInit = false;
 
 function ensureQueries() {

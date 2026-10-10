@@ -42,7 +42,6 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
     })
     .get("/:videoId", async (ctx) => {
         const videoId = ctx.req.param("videoId");
-        // TODO: test the error case
         const title = await db.getStreamTitle(videoId);
         if (title == null) {
             return ctx.html(
