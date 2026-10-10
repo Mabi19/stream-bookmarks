@@ -81,7 +81,9 @@ function chunk<T>(items: T[], size: number): T[][] {
     return chunks;
 }
 
-const INSERT_CHUNK_SIZE = 100;
+const MAX_QUERY_PARAMS = 99;
+const BOOKMARKS_PER_INSERT = Math.floor(MAX_QUERY_PARAMS / 3);
+const TITLES_PER_INSERT = Math.floor(MAX_QUERY_PARAMS / 2);
 
 async function exportDump(path: string) {
     const query = createD1Client();
@@ -129,7 +131,7 @@ async function importDump(path: string) {
         title,
     ]);
 
-    for (const part of chunk(bookmarkRows, INSERT_CHUNK_SIZE)) {
+    for (const part of chunk(bookmarkRows, BOOKMARKS_PER_INSERT)) {
         const values = part.map(() => "(?, ?, ?)").join(", ");
         await query(
             `INSERT INTO bookmarks (video_id, username, time) VALUES ${values}
@@ -137,7 +139,7 @@ async function importDump(path: string) {
             part.flat(),
         );
     }
-    for (const part of chunk(titleRows, INSERT_CHUNK_SIZE)) {
+    for (const part of chunk(titleRows, TITLES_PER_INSERT)) {
         const values = part.map(() => "(?, ?)").join(", ");
         await query(
             `INSERT INTO stream_titles (video_id, title) VALUES ${values}

@@ -11,23 +11,6 @@
         "enabled": true,
     },
     "upload_source_maps": true,
-    /**
-     * Smart Placement
-     * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
-     */
-    // "placement": {  "mode": "smart" }
-    /**
-     * Bindings
-     * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
-     * databases, object storage, AI inference, real-time communication and more.
-     * https://developers.cloudflare.com/workers/runtime-apis/bindings/
-     */
-    /**
-     * Environment Variables
-     * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
-     * Note: Use secrets to store sensitive data.
-     * https://developers.cloudflare.com/workers/configuration/secrets/
-     */
     "secrets": {
         "required": ["YOUTUBE_API_KEY"],
     },
@@ -35,7 +18,7 @@
         {
             "binding": "DB",
             "database_name": "stream-bookmarks",
-            "database_id": "7f827721-cfcd-405a-b32b-e19096eab9a8",
+            "database_id": "5218042c-8562-4fed-9290-1da02c755618",
         },
     ],
     "kv_namespaces": [
