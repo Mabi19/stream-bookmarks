@@ -70,7 +70,7 @@ export async function createBookmark(
         throw new HTTPException(400, { message: "Invalid request data" });
     }
 
-    if (!config.allowedChannels.includes(channelId)) {
+    if (!Object.hasOwn(config.allowedChannels, channelId)) {
         return "Error: This channel isn't whitelisted";
     }
 
@@ -79,9 +79,22 @@ export async function createBookmark(
         return "Error: Couldn't find livestream! Note that due to YouTube API limitations, bookmarks don't work on members-only content.";
     }
 
-    const parsedTime = timeString ? parseTime(timeString) : undefined;
-    // round off fractional seconds
-    const time = parsedTime ?? Math.floor((Date.now() - stream.startTime.getTime()) / 1000);
+    let time: number | undefined;
+    if (timeString) {
+        if (timeString.startsWith("-")) {
+            const parsedTime = parseTime(timeString.slice(1));
+            if (parsedTime) {
+                time = Math.max((Date.now() - stream.startTime.getTime()) / 1000 - parsedTime, 0);
+            }
+        } else {
+            time = parseTime(timeString);
+        }
+    }
+    if (!time) {
+        time = (Date.now() - stream.startTime.getTime()) / 1000;
+    }
+    // round off fractional seconds (the DB stores an int)
+    time = Math.floor(time);
 
     const wasInserted = await db.setBookmark(stream.videoId, username, time);
     const actionMessage = wasInserted ? "creates a bookmark" : "moves their bookmark";

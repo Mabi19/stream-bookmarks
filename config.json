@@ -1,3 +1,7 @@
 {
-    "allowedChannels": ["UCp6pmlkI1WbrZFOWlXtOwCQ"]
+    "allowedChannels": {
+        "UCp6pmlkI1WbrZFOWlXtOwCQ": {
+            "uploads": "UUp6pmlkI1WbrZFOWlXtOwCQ"
+        }
+    }
 }

@@ -1,8 +1,22 @@
 import { env } from "cloudflare:workers";
 import * as v from "valibot";
+import config from "./config";
 import * as db from "./db";
 
-// These two API wrapper functions are specialized for what we want.
+// These three API wrapper functions are specialized for what we want.
+
+async function youtubePlaylistList(playlistId: string): Promise<any> {
+    const response = await fetch(
+        `https://www.googleapis.com/youtube/v3/playlistItems?key=${encodeURIComponent(
+            env.YOUTUBE_API_KEY,
+        )}&part=contentDetails&playlistId=${encodeURIComponent(playlistId)}`,
+    );
+    if (!response.ok) {
+        console.error("YT API Error:", await response.json());
+        throw new Error("The YouTube API returned an error");
+    }
+    return await response.json();
+}
 
 async function youtubeSearch(channelId: string): Promise<any> {
     const response = await fetch(
@@ -40,51 +54,69 @@ const YoutubeStreamSchema = v.object({
 });
 type YoutubeStream = v.InferOutput<typeof YoutubeStreamSchema>;
 
-async function searchForLivestream(channelId: string): Promise<YoutubeStream | null> {
-    const searchResult = await youtubeSearch(channelId);
+async function getStreamData(channelId: string, videoId: string): Promise<YoutubeStream | null> {
+    const listResult = await youtubeVideosList(videoId);
 
-    const item = searchResult.items?.[0];
-    if (item) {
-        // found the livestream! get its start time
-        const videoId = item.id?.videoId;
-        if (!videoId) {
-            throw new Error("Couldn't get video ID");
-        }
-
-        const listResult = await youtubeVideosList(videoId);
-
-        const startTimeString = listResult.items?.[0]?.liveStreamingDetails?.actualStartTime;
-        if (!startTimeString) {
-            console.debug(`finding stream for channel ${channelId} failed by start time`);
-            // stream not started yet (or other error)
-            return null;
-        }
-
-        // get from list result because search returns it escaped for some reason
-        const title = listResult.items?.[0]?.snippet?.title;
-        if (!title) {
-            throw new Error("Couldn't get stream title");
-        }
-        console.debug(`title: ${title}`);
-
-        const stream: YoutubeStream = {
-            videoId,
-            startTime: new Date(startTimeString),
-        };
-
-        await env.KV.put(`channelCurrentLivestream:${channelId}`, JSON.stringify(stream), {
-            expirationTtl: 6 * 60 * 60,
-        });
-        await db.setStreamTitle(videoId, title);
-
-        console.debug("put", stream, "in cache");
-
-        return stream;
-    } else {
-        console.debug(`finding stream for channel ${channelId} failed by search`);
-        // no livestream
+    const item = listResult.items?.[0];
+    if (!item) {
+        console.debug(`video ${videoId} does not exist`);
         return null;
     }
+
+    if (item.liveStreamingDetails?.actualEndTime) {
+        console.debug(`stream ${videoId} has already ended`);
+        return null;
+    }
+
+    const startTimeString = item.liveStreamingDetails?.actualStartTime;
+    if (!startTimeString) {
+        console.debug(`channel ${channelId}'s video ${videoId} is not an active livestream`);
+        // stream not started yet (or other error)
+        return null;
+    }
+
+    const title = item.snippet?.title;
+    if (!title) {
+        throw new Error("Couldn't get stream title");
+    }
+    console.debug(`title: ${title}`);
+
+    const stream: YoutubeStream = {
+        videoId,
+        startTime: new Date(startTimeString),
+    };
+    await env.KV.put(`channelCurrentLivestream:${channelId}`, JSON.stringify(stream), {
+        expirationTtl: 6 * 60 * 60,
+    });
+    await db.setStreamTitle(videoId, title);
+
+    console.debug("put", stream, "in cache");
+
+    return stream;
+}
+
+async function searchForLivestream(channelId: string): Promise<YoutubeStream | null> {
+    // First, try looking for the latest video.
+    // Usually it'll be the livestream we're looking for.
+    // If not, use an expensive search call as a fallback.
+    const playlistId = config.allowedChannels[channelId]!.uploads;
+    const playlistResult = await youtubePlaylistList(playlistId);
+    console.debug("playlist", playlistResult);
+    const playlistVideoId = playlistResult.items?.[0]?.contentDetails?.videoId;
+    if (playlistVideoId) {
+        return await getStreamData(channelId, playlistVideoId);
+    }
+
+    const searchResult = await youtubeSearch(channelId);
+    console.debug("search", searchResult);
+    const searchVideoId = searchResult.items?.[0].id?.videoId;
+    if (searchVideoId) {
+        return await getStreamData(channelId, searchVideoId);
+    }
+
+    console.debug(`finding stream for channel ${channelId} failed`);
+    // no livestream
+    return null;
 }
 
 async function verifyLivestream(stream: YoutubeStream): Promise<boolean> {

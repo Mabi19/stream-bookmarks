@@ -73,7 +73,7 @@ export const Homepage = ({ bookmarkCount }: { bookmarkCount: number | null }) =>
             html`
                 <h1>Stream Bookmarks</h1>
                 <p>
-                    This is a tiny (&lt; 500 lines of code) utility to bookmark where you left a
+                    This is a tiny (&lt; 600 lines of code) utility to bookmark where you left a
                     YouTube stream, by making a Nightbot Custom API. Bookmarks are stored
                     indefinitely, for now at least; there are currently
                     <strong>${bookmarkCount ?? "no"}</strong> bookmarks in the database. It's
@@ -100,6 +100,19 @@ export const Homepage = ({ bookmarkCount }: { bookmarkCount: number | null }) =>
                     <a href="https://bookmarks.mabi.land/I89G7VFWCNw"
                         >https://bookmarks.mabi.land/I89G7VFWCNw</a
                     >.
+                </p>
+                <p>
+                    The !bookmark command by default puts the bookmark at the current point in the
+                    live stream, but this can be customized by putting a timestamp after the
+                    command, like <code>!bookmark 30:00</code> to put a bookmark 30 minutes in.
+                    Additionally, putting a minus sign before the timestamp puts it that amount of
+                    time behind live, like <code>!bookmark -15:00</code> which will put the bookmark
+                    45 minutes in assuming the stream's been going on for 1 hour.
+                </p>
+                <p>
+                    Invalid timestamps will put the bookmark at the current position, as if one
+                    wasn't provided. Only timestamps formatted like <code>minutes:seconds</code> and
+                    <code>hours:minutes:seconds</code> are supported.
                 </p>
             `,
         ],
