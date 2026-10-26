@@ -1,8 +1,16 @@
 import { html } from "hono/html";
 import { PropsWithChildren } from "hono/jsx";
-import { type Bookmark, formatTime } from "./bookmark";
+import type { HtmlEscapedString } from "hono/utils/html";
+import { formatTime, type Bookmark } from "./bookmark";
 
-export const Layout = ({ title, children }: PropsWithChildren<{ title: string }>) => html`
+export const Layout = ({
+    title,
+    meta,
+    children,
+}: PropsWithChildren<{
+    title: string;
+    meta?: HtmlEscapedString | Promise<HtmlEscapedString>;
+}>) => html`
     <!DOCTYPE html>
     <html>
         <head>
@@ -15,6 +23,7 @@ export const Layout = ({ title, children }: PropsWithChildren<{ title: string }>
                 href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.violet.min.css"
             />
             <link href="https://mabi.land/assets/icon.png" rel="icon" />
+            ${meta}
         </head>
         <body>
             <main class="container">${children}</main>
@@ -51,6 +60,7 @@ export const BookmarkList = ({
 
     return Layout({
         title: `Bookmarks for "${title}"`,
+        meta: html`<meta name="robots" content="noindex" />`,
         children: [
             html`
                 <h1>Bookmarks for &ldquo;${title}&rdquo;</h1>
